@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InScreens · Бизнес-настройка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/roadmap.css">
+</head>
+<body data-page="business">
+<section class="gate" id="gate">
+  <div class="gate-box">
+    <p class="eyebrow">InScreens · внутренний трекер</p>
+    <h1>Под паролем</h1>
+    <p class="lede">Роадмапы зашифрованы. Пароль расшифровывает их прямо в браузере — на сервере их нет ни в каком читаемом виде.</p>
+    <form class="gate-form" id="gateForm" autocomplete="off">
+      <input type="password" id="gatePw" placeholder="Пароль" aria-label="Пароль" autocomplete="current-password">
+      <button type="submit" id="gateBtn">Открыть</button>
+    </form>
+    <p class="gate-err" id="gateErr" hidden></p>
+    <p class="gate-foot">AES-GCM, ключ из пароля через PBKDF2-SHA256. Пароль никуда не отправляется и остаётся в этой вкладке до её закрытия.</p>
+  </div>
+</section>
+
+<div id="site" hidden>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow"><a href="index.html">← Оба роадмапа</a> · Роадмап 1 из 2</p>
+  <div class="title-row">
+    <div>
+      <h1 id="rTitle"></h1>
+      <p class="lede" id="rLede"></p>
+    </div>
+    <div class="total"><b id="pct">0%</b><span id="totalTxt"></span></div>
+  </div>
+  <div class="bar"><i id="bar" style="width:0"></i></div>
+</header>
+
+<div class="facts" id="facts"></div>
+
+<div class="controls">
+  <button class="btn" id="editBtn">Редактировать</button>
+  <button class="btn ghost" id="hideBtn">Скрыть выполненные</button>
+  <div class="spacer"></div>
+  <button class="btn ghost" id="addStage">+ Этап</button>
+  <button class="btn ghost" id="themeBtn" title="Светлая / тёмная тема">◐</button>
+  <button class="btn" id="exportBtn">Экспорт</button>
+  <button class="btn ghost" id="resetBtn">Сброс</button>
+</div>
+
+<main id="stages"></main>
+
+<footer>
+  Статус задачи — клик по кружку: не начато → в работе → готово. Отмеченные подзадачи двигают статус сами.
+  Прогресс живёт в localStorage этого браузера. Чтобы сохранить изменения в репозиторий, нажмите
+  <code>Экспорт</code> и положите скачанный файл в <code>data/business.enc.js</code> репозитория сайта.
+</footer>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg">
+    <h3>Экспорт роадмапа</h3>
+    <p>Файл <code>business.enc.js</code> уже скачан и зашифрован тем же паролем. Замените им <code>data/business.enc.js</code> в репозитории сайта и закоммитьте — тогда роадмап откроется таким же у всех. Поле ниже показывает содержимое файла.</p>
+    <textarea id="dlgText" spellcheck="false"></textarea>
+    <div class="dlg-foot">
+      <button class="btn" id="dlgCopy">Скопировать</button>
+      <button class="btn" id="dlgApply">Применить из текста</button>
+      <button class="btn ghost" id="dlgClose">Закрыть</button>
+    </div>
+  </div>
+</dialog>
+
+</div>
+
+<script src="data/business.enc.js"></script>
+<script src="assets/gate.js"></script>
+</body>
+</html>

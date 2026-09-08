@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InScreens · Роадмапы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/roadmap.css">
+</head>
+<body data-page="hub">
+<section class="gate" id="gate">
+  <div class="gate-box">
+    <p class="eyebrow">InScreens · внутренний трекер</p>
+    <h1>Под паролем</h1>
+    <p class="lede">Роадмапы зашифрованы. Пароль расшифровывает их прямо в браузере — на сервере их нет ни в каком читаемом виде.</p>
+    <form class="gate-form" id="gateForm" autocomplete="off">
+      <input type="password" id="gatePw" placeholder="Пароль" aria-label="Пароль" autocomplete="current-password">
+      <button type="submit" id="gateBtn">Открыть</button>
+    </form>
+    <p class="gate-err" id="gateErr" hidden></p>
+    <p class="gate-foot">AES-GCM, ключ из пароля через PBKDF2-SHA256. Пароль никуда не отправляется и остаётся в этой вкладке до её закрытия.</p>
+  </div>
+</section>
+
+<div id="site" hidden>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">InScreens · внутренний трекер</p>
+  <div class="title-row">
+    <div>
+      <h1>Два роадмапа</h1>
+      <p class="lede">Бизнес-настройка вокруг продукта и техническая работа внутри него. Разные люди, разные сроки — поэтому разные страницы.</p>
+    </div>
+  </div>
+</header>
+
+<div class="hub">
+  <a class="hub-card b" href="business.html">
+    <p class="eyebrow">Роадмап 01</p>
+    <h2>Бизнес-настройка</h2>
+    <p>Всё, что нужно закрыть вокруг продукта, а не в продукте.</p>
+    <div class="bar"><i id="barB" style="width:0"></i></div>
+    <div class="st"><span id="stB">—</span><span id="pcB">0%</span></div>
+  </a>
+  <a class="hub-card t" href="technical.html">
+    <p class="eyebrow">Роадмап 02</p>
+    <h2>Техническая часть</h2>
+    <p>Что осталось между текущим состоянием и честным v1.</p>
+    <div class="bar"><i id="barT" style="width:0"></i></div>
+    <div class="st"><span id="stT">—</span><span id="pcT">0%</span></div>
+  </a>
+</div>
+
+<footer>
+  Прогресс каждого роадмапа хранится в localStorage вашего браузера. Чтобы поделиться состоянием с кофаундером —
+  нажмите <code>Экспорт</code> внутри роадмапа и закоммитьте файл в <code>data/</code>.
+</footer>
+</div>
+
+</div>
+
+<script src="data/business.enc.js"></script>
+<script src="data/technical.enc.js"></script>
+<script src="assets/gate.js"></script>
+<script>
+try {
+  var saved = localStorage.getItem('inscreens.roadmap.theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+} catch (e) {}
+
+window.renderHub = function (B, T) {
+  function statusOf(t) {
+    if (t.status === 'done') return 'done';
+    var subs = t.subs || [];
+    if (subs.length) {
+      var d = subs.filter(function (s) { return s.done; }).length;
+      if (d === subs.length && d > 0) return 'done';
+      if (d > 0) return 'wip';
+    }
+    return t.status || 'todo';
+  }
+  function model(fallback) {
+    try {
+      var raw = localStorage.getItem('inscreens.roadmap.' + fallback.key + '.v1');
+      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.stages)) return s; }
+    } catch (e) {}
+    return fallback;
+  }
+  function fill(fallback, barId, stId, pcId) {
+    var m = model(fallback);
+    var tasks = m.stages.reduce(function (a, s) { return a.concat(s.tasks); }, []);
+    var done = tasks.filter(function (t) { return statusOf(t) === 'done'; }).length;
+    var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+    document.getElementById(barId).style.width = pct + '%';
+    var n = m.stages.length, d10 = n % 10, d100 = n % 100;
+    var word = (d10 === 1 && d100 !== 11) ? 'этап'
+      : (d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14)) ? 'этапа' : 'этапов';
+    document.getElementById(stId).textContent = done + ' из ' + tasks.length + ' задач · ' + n + ' ' + word;
+    document.getElementById(pcId).textContent = pct + '%';
+  }
+  fill(B, 'barB', 'stB', 'pcB');
+  fill(T, 'barT', 'stT', 'pcT');
+};
+</script>
+</body>
+</html>
