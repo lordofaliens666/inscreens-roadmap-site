@@ -89,7 +89,7 @@
     document.getElementById('gate').remove();
     document.getElementById('site').hidden = false;
     var s = document.createElement('script');
-    s.src = 'assets/roadmap.js';
+    s.src = 'assets/roadmap.js?v=47e0e15d';
     document.body.appendChild(s);
   }
 

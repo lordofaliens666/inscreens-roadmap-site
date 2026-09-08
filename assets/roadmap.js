@@ -13,6 +13,7 @@
 
   // ---------- state ----------
   var S = load();
+  var mergedCount = null;
 
   function fresh() {
     return JSON.parse(JSON.stringify({
@@ -62,6 +63,14 @@
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
+  // Файл ушёл вперёд сохранённого состояния — сливаем сразу, не спрашивая:
+  // прогресс при слиянии сохраняется, спрашивать не о чем.
+  if (DATA.rev && S.rev !== DATA.rev) {
+    var before = countTasks(S);
+    S = mergeFromFile(S);
+    mergedCount = countTasks(S) - before;
+  }
+
   var UI = { edit: false, hideDone: false, open: {} };
   try { UI = Object.assign(UI, JSON.parse(localStorage.getItem(KEY + '.ui') || '{}')); } catch (e) {}
   function saveUI() { try { localStorage.setItem(KEY + '.ui', JSON.stringify(UI)); } catch (e) {} }
@@ -83,6 +92,9 @@
       if (d > 0) return 'wip';
     }
     return t.status || 'todo';
+  }
+  function countTasks(m) {
+    return m.stages.reduce(function (a, st) { return a + st.tasks.length; }, 0);
   }
   function allTasks() {
     return S.stages.reduce(function (a, st) { return a.concat(st.tasks); }, []);
@@ -365,22 +377,20 @@
 
   // ---------- update notice ----------
   function updateNotice() {
-    if (!DATA.rev || S.rev === DATA.rev) return;
+    if (mergedCount === null) return;
     var bar = document.createElement('div');
     bar.className = 'notice';
-    bar.innerHTML = '<p>Файл роадмапа обновился — в нём есть задачи, которых нет в вашей версии. ' +
-      'Обновление берёт тексты из файла, а ваши статусы и галочки переносит по совпадающим задачам; ' +
-      'задачи, добавленные вами в браузере, остаются.</p>' +
-      '<div class="notice-act"><button class="btn" id="noticeYes">Обновить</button>' +
-      '<button class="btn ghost" id="noticeNo">Оставить как есть</button></div>';
+    var d10 = mergedCount % 10, d100 = mergedCount % 100;
+    var word = (d10 === 1 && d100 !== 11) ? 'задачу'
+      : (d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14)) ? 'задачи' : 'задач';
+    var what = mergedCount > 0 ? 'В нём на ' + mergedCount + ' ' + word + ' больше. ' : '';
+    bar.innerHTML = '<p>Роадмап обновился из файла. ' + what +
+      'Ваши статусы и галочки перенесены по совпадающим задачам, добавленные вами задачи сохранены. ' +
+      'Тексты задач взяты из файла — правки текста, сделанные в браузере, заменены.</p>' +
+      '<div class="notice-act"><button class="btn ghost" id="noticeOk">Понятно</button></div>';
     var host = document.getElementById('stages');
     host.parentNode.insertBefore(bar, host);
-    bar.querySelector('#noticeYes').addEventListener('click', function () {
-      S = mergeFromFile(S); bar.remove(); render();
-    });
-    bar.querySelector('#noticeNo').addEventListener('click', function () {
-      S.rev = DATA.rev; bar.remove(); save();
-    });
+    bar.querySelector('#noticeOk').addEventListener('click', function () { bar.remove(); });
   }
 
   // ---------- head ----------
