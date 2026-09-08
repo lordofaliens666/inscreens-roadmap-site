@@ -16,7 +16,7 @@
 
   function fresh() {
     return JSON.parse(JSON.stringify({
-      key: DATA.key, title: DATA.title, lede: DATA.lede, accent: DATA.accent,
+      key: DATA.key, rev: DATA.rev || 1, title: DATA.title, lede: DATA.lede, accent: DATA.accent,
       facts: DATA.facts || [], stages: DATA.stages
     }));
   }
@@ -26,6 +26,39 @@
       if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.stages)) return s; }
     } catch (e) {}
     return fresh();
+  }
+
+  // Файл роадмапа мог обновиться уже после того, как человек начал его вести.
+  // Тогда берём тексты из файла, а отметки — из браузера, по совпадающим id.
+  function mergeFromFile(saved) {
+    var progress = {};
+    saved.stages.forEach(function (st) {
+      st.tasks.forEach(function (t) {
+        progress[t.id] = {
+          status: t.status, blocker: t.blocker,
+          subs: (t.subs || []).reduce(function (a, s) { a[s.id] = s.done; return a; }, {})
+        };
+      });
+    });
+    var seen = {};
+    var next = fresh();
+    next.stages.forEach(function (st) {
+      st.tasks.forEach(function (t) {
+        seen[t.id] = true;
+        var p = progress[t.id];
+        if (!p) return;
+        t.status = p.status;
+        if (p.blocker !== undefined) t.blocker = p.blocker;
+        (t.subs || []).forEach(function (s) { if (p.subs[s.id] !== undefined) s.done = p.subs[s.id]; });
+      });
+    });
+    // задачи, добавленные в браузере, не теряем
+    saved.stages.forEach(function (st) {
+      var target = next.stages.filter(function (x) { return x.id === st.id; })[0]
+        || next.stages[next.stages.length - 1];
+      st.tasks.forEach(function (t) { if (!seen[t.id]) target.tasks.push(t); });
+    });
+    return next;
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
@@ -330,6 +363,26 @@
     try { localStorage.setItem('inscreens.roadmap.theme', next); } catch (e) {}
   });
 
+  // ---------- update notice ----------
+  function updateNotice() {
+    if (!DATA.rev || S.rev === DATA.rev) return;
+    var bar = document.createElement('div');
+    bar.className = 'notice';
+    bar.innerHTML = '<p>Файл роадмапа обновился — в нём есть задачи, которых нет в вашей версии. ' +
+      'Обновление берёт тексты из файла, а ваши статусы и галочки переносит по совпадающим задачам; ' +
+      'задачи, добавленные вами в браузере, остаются.</p>' +
+      '<div class="notice-act"><button class="btn" id="noticeYes">Обновить</button>' +
+      '<button class="btn ghost" id="noticeNo">Оставить как есть</button></div>';
+    var host = document.getElementById('stages');
+    host.parentNode.insertBefore(bar, host);
+    bar.querySelector('#noticeYes').addEventListener('click', function () {
+      S = mergeFromFile(S); bar.remove(); render();
+    });
+    bar.querySelector('#noticeNo').addEventListener('click', function () {
+      S.rev = DATA.rev; bar.remove(); save();
+    });
+  }
+
   // ---------- head ----------
   document.getElementById('rTitle').innerHTML = rich(S.title);
   document.getElementById('rLede').textContent = S.lede || '';
@@ -343,4 +396,5 @@
   }
 
   render();
+  updateNotice();
 })();

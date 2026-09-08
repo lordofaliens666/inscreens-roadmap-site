@@ -72,6 +72,7 @@ try {
 } catch (e) {}
 
 window.renderHub = function (B, T) {
+
   function statusOf(t) {
     if (t.status === 'done') return 'done';
     var subs = t.subs || [];
