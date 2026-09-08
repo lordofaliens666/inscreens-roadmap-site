@@ -84,11 +84,34 @@ window.renderHub = function (B, T) {
     return t.status || 'todo';
   }
   function model(fallback) {
+    var saved = null;
     try {
       var raw = localStorage.getItem('inscreens.roadmap.' + fallback.key + '.v1');
-      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.stages)) return s; }
+      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.stages)) saved = s; }
     } catch (e) {}
-    return fallback;
+    if (!saved) return fallback;
+    if (!fallback.rev || saved.rev === fallback.rev) return saved;
+
+    // Файл ушёл вперёд сохранённого состояния: считаем по файлу, а отметки
+    // накладываем по совпадающим id. Само слияние и запись в localStorage
+    // происходят на странице роадмапа — здесь только показываем правильные числа.
+    var was = {};
+    saved.stages.forEach(function (st) {
+      st.tasks.forEach(function (t) { was[t.id] = t; });
+    });
+    var merged = JSON.parse(JSON.stringify(fallback));
+    merged.stages.forEach(function (st) {
+      st.tasks.forEach(function (t) {
+        var p = was[t.id];
+        if (!p) return;
+        t.status = p.status;
+        (t.subs || []).forEach(function (sub) {
+          var ps = (p.subs || []).filter(function (x) { return x.id === sub.id; })[0];
+          if (ps) sub.done = ps.done;
+        });
+      });
+    });
+    return merged;
   }
   function fill(fallback, barId, stId, pcId) {
     var m = model(fallback);
